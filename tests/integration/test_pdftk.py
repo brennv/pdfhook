@@ -171,6 +171,16 @@ class TestFields(TestPDFTK):
                 value, pdftk.encoding)
             self.assertIn(pdf_friendly_search_term, filled_pdf)
 
+    def test_fill_text_with_unicode(self):
+        path = self.field_pdfs['text']
+        sample_answers = {
+            'multiline': '你好，世界\nஹலோ உலகம்\n안녕하세요 세계',
+            'single': 'مرحبا بالعالم'
+        }
+        pdftk = PDFTKWrapper()
+        with self.assertRaises(UnicodeEncodeError):
+            filled_pdf = pdftk.fill_pdf(path, sample_answers)
+
     @attr('slow')
     def test_combine_pdfs(self):
         pdftk = PDFTKWrapper()
