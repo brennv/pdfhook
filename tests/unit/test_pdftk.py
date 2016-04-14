@@ -233,7 +233,7 @@ class TestPDFTK(TestCase):
         #vars
         pdftk = PDFTKWrapper()
         fake_answer = Mock()
-        fake_multiple_answers = [fake_answer]
+        fake_multiple_answers = [fake_answer, fake_answer]
 
         #ensure self.clean_up value is preserved
         fake_clean_up = pdftk.clean_up
@@ -264,5 +264,27 @@ class TestPDFTK(TestCase):
         self.assertEqual(pdftk.clean_up, fake_clean_up)
         coerce_to_file_path.assert_called_with(fake_path)
         fake_fill_pdf.assert_called_with(fake_path, fake_answer)
+        self.assertEqual(fake_fill_pdf.call_count, 2)
         fake_write_tmp_file.assert_called_with(bytestring=fake_filled_pdf)
-        fake_join_pdfs.assert_called_with([fake_path])
+        fake_join_pdfs.assert_called_with([fake_path, fake_path])
+
+    #def test_join_pdfs(self):
+        #vars
+        # pdftk = PDFTKWrapper()
+        # pdftk1 = PDFTKWrapper()
+        # fake_pdf_path = "fake/pdf/path"
+        # fake_pdf_paths = [fake_pdf_path, fake_pdf_path, fake_pdf_path]
+        # too_many_pdf_paths = [fake_pdf_path * 100000]
+        #
+        #
+        # #for loop
+        # coerce_to_file_path = Mock(return_value=fake_path)
+        # pdftk._coerce_to_file_path = coerce_to_file_path
+
+
+        #run the method
+        #result= pdftk1.join_pdfs(too_many_pdf_paths)
+        #result = pdftk.join_pdfs(fake_pdf_paths)
+        #assert
+        #coerce_to_file_path.assert_called_with(fake_path)
+        #self.assertEqual(coerce_to_file_path.call_count, 3)
