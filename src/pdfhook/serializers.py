@@ -41,6 +41,7 @@ class PDFFormIndexDumper(ma.ModelSchema):
             'original_pdf_title',
             'latest_post',
             'post_count',
+            'is_archived',
             )
 
 class PDFFormLoader(ma.ModelSchema):

@@ -10,6 +10,7 @@ class PDFForm(db.Model):
     field_map = db.Column(db.Text)
     post_count = db.Column(db.Integer, default=0)
     latest_post = db.Column(db.DateTime())
+    is_archived = db.Column(db.Integer, default=0)  # db.Column(db.Boolean, default=False)
 
     def filename_for_submission(self):
         date_format = "%Y-%m-%d_%H-%M-%S-%f"

@@ -37,6 +37,7 @@
           <th>Post count</th>
           <th>Latest post</th>
           <th>Date added</th>
+          <th> </th>
         </tr>
       {%- for pdf in pdfs %}
         <tr>
@@ -53,6 +54,9 @@
           </td>
           <td>
             {{ pdf.added_on.strftime("%b %d %Y - %H:%M:%S") }}
+          </td>
+          <td>
+            <a href="{{ url_for('pdfhook.archive_pdf', pdf_id=pdf.id) }}">Delete</a>
           </td>
         </tr>
       {% endfor -%}

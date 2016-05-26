@@ -48,6 +48,7 @@ def cleanup_files(response):
 @blueprint.route('/', methods=['GET'])
 def index():
     pdfs = models.PDFForm.query\
+        .filter_by(is_archived=0)\
         .order_by(models.PDFForm.latest_post.desc()).all()
     if request_wants_json():
         serialized_pdfs = pdf_list_dumper.dump(pdfs, many=True).data
@@ -76,7 +77,6 @@ def post_pdf():
     if request_wants_json():
         return jsonify(pdf_dumper.dump(pdf).data)
     return redirect(url_for('pdfhook.get_pdf', pdf_id=pdf.id))
-
 
 
 @blueprint.route('/<int:pdf_id>/', methods=['GET'])
@@ -120,3 +120,17 @@ def fill_pdf(pdf_id):
         attachment_filename=filename,
         mimetype='application/pdf')
 
+
+@blueprint.route('/<int:pdf_id>/archive', methods=['GET'])
+def archive_pdf(pdf_id):
+    pdf = models.PDFForm.query.filter_by(id=pdf_id).first()
+    pdf.is_archived = 1
+    db.session.add(pdf)
+    db.session.commit()
+    pdfs = models.PDFForm.query\
+        .filter_by(is_archived=0)\
+        .order_by(models.PDFForm.latest_post.desc()).all()
+    if request_wants_json():
+        serialized_pdfs = pdf_list_dumper.dump(pdfs, many=True).data
+        return jsonify(dict(pdf_forms=serialized_pdfs))
+    return render_template('index.html', pdfs=pdfs)
