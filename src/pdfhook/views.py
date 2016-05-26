@@ -127,10 +127,4 @@ def archive_pdf(pdf_id):
     pdf.is_archived = 1
     db.session.add(pdf)
     db.session.commit()
-    pdfs = models.PDFForm.query\
-        .filter_by(is_archived=0)\
-        .order_by(models.PDFForm.latest_post.desc()).all()
-    if request_wants_json():
-        serialized_pdfs = pdf_list_dumper.dump(pdfs, many=True).data
-        return jsonify(dict(pdf_forms=serialized_pdfs))
-    return render_template('index.html', pdfs=pdfs)
+    return redirect(url_for('pdfhook.index'))
