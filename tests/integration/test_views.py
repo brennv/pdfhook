@@ -47,5 +47,7 @@ class TestViews(BaseTestCase):
         data = json.loads(response.data.decode('utf-8'))
         self.assertDictEqual(expected, data)
 
-
-
+    def test_delete_pdf_returns_clean_index(self):
+        url = url_for('pdfhook.delete_pdf', pdf_id=self.pdfs[0].id)
+        response = self.client.get(url)
+        self.assertNotIn('sample_form.pdf', response.data.decode('utf-8'))
