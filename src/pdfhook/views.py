@@ -1,6 +1,6 @@
 from flask import (
     request, render_template, jsonify, Response, url_for,
-    current_app, send_file, redirect)
+    current_app, send_file, redirect, abort)
 from sqlalchemy.engine.reflection import Inspector
 import io, os, glob, json, datetime
 from src.main import db
@@ -78,7 +78,6 @@ def post_pdf():
     return redirect(url_for('pdfhook.get_pdf', pdf_id=pdf.id))
 
 
-
 @blueprint.route('/<int:pdf_id>/', methods=['GET'])
 def get_pdf(pdf_id):
     pdf = models.PDFForm.query.filter_by(id=pdf_id).first()
@@ -120,3 +119,9 @@ def fill_pdf(pdf_id):
         attachment_filename=filename,
         mimetype='application/pdf')
 
+
+@blueprint.route('/<int:pdf_id>/delete', methods=['POST'])
+def delete_pdf(pdf_id):
+    pdf = models.PDFForm.query.filter_by(id=pdf_id).delete()
+    db.session.commit()
+    return redirect(url_for('pdfhook.index'))
