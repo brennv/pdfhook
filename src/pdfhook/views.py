@@ -61,6 +61,7 @@ def post_pdf():
     if not request.files:
         abort(Response("No files found"))
     # what should it do if it receives no files?
+    # for json: abort(400) or @app.errorhandler(400) bad request
     file_storage = request.files['file']
     filename = os.path.basename(file_storage.filename)
     raw_pdf_data = file_storage.read()
