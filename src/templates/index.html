@@ -13,7 +13,7 @@
   </div>
 
   <div class="row">
-    <form class="col-md-6 col-xs-8 col-md-offset-1" action="{{ url_for('pdfhook.post_pdf') }}" enctype="multipart/form-data" method="post">
+    <form class="col-md-6 col-xs-8 col-md-offset-1" action="{{ url_for('form_api') }}" enctype="multipart/form-data" method="post">
       <h4>Upload a PDF Form to Try It Out</h4>
       <div class="input-group form-group">
           <span class="input-group-btn">
@@ -37,11 +37,12 @@
           <th>Post count</th>
           <th>Latest post</th>
           <th>Date added</th>
+          <th></th>
         </tr>
       {%- for pdf in pdfs %}
         <tr>
           <td>
-            <a href="{{ url_for('pdfhook.get_pdf', pdf_id=pdf.id) }}">{{ pdf.original_pdf_title }}</a>
+            <a href="{{ url_for('form_api', pdf_id=pdf.id) }}">{{ pdf.original_pdf_title }}</a>
           </td>
           <td>
             {{ pdf.post_count }}
@@ -53,6 +54,11 @@
           </td>
           <td>
             {{ pdf.added_on.strftime("%b %d %Y - %H:%M:%S") }}
+          </td>
+          <td>
+            <form action="{{ url_for('pdfhook.html_delete', pdf_id=pdf.id) }}" method="POST">
+              <input type="submit" value="Delete" />
+            </form>
           </td>
         </tr>
       {% endfor -%}

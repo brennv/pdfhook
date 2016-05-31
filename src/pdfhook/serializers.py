@@ -5,7 +5,7 @@ from flask import url_for, current_app
 from src.pdfhook.models import PDFForm
 
 def generate_pdf_post_url(pdf):
-    return url_for('pdfhook.fill_pdf', _external=True,
+    return url_for('form_api', _external=True,
         _scheme=current_app.config['PREFERRED_URL_SCHEME'],
         pdf_id=pdf.id)
 

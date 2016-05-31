@@ -1,6 +1,7 @@
 from flask import (
     request, render_template, jsonify, Response, url_for,
-    current_app, send_file, redirect)
+    current_app, send_file, redirect, abort)
+from flask.views import MethodView
 from sqlalchemy.engine.reflection import Inspector
 import io, os, glob, json, datetime
 from src.main import db
@@ -11,6 +12,7 @@ from src.pdfhook import (
 )
 from src.pdfparser import PDFParser
 from src.settings import PROJECT_ROOT
+
 
 pdf_dumper = serializers.PDFFormDumper()
 pdf_list_dumper = serializers.PDFFormIndexDumper()
@@ -45,78 +47,88 @@ def cleanup_files(response):
     return response
 
 
-@blueprint.route('/', methods=['GET'])
-def index():
-    pdfs = models.PDFForm.query\
-        .order_by(models.PDFForm.latest_post.desc()).all()
-    if request_wants_json():
-        serialized_pdfs = pdf_list_dumper.dump(pdfs, many=True).data
-        return jsonify(dict(pdf_forms=serialized_pdfs))
-    return render_template('index.html', pdfs=pdfs)
-
-
-@blueprint.route('/', methods=['POST'])
-def post_pdf():
-    # get pdf
-    if not request.files:
-        abort(Response("No files found"))
-    # what should it do if it receives no files?
-    file_storage = request.files['file']
-    filename = os.path.basename(file_storage.filename)
-    raw_pdf_data = file_storage.read()
-    field_map = pdfparser.get_field_data(raw_pdf_data)['fields']
-
-    pdf, errors = pdf_loader.load(dict(
-        original_pdf_title=filename,
-        field_map=field_map
-        ))
-    pdf.original_pdf = raw_pdf_data
-    db.session.add(pdf)
+@blueprint.route('/forms/<int:pdf_id>/delete', methods=['POST'])
+def html_delete(pdf_id):
+    '''Delete a single pdf form.'''
+    pdf = models.PDFForm.query.filter_by(id=pdf_id).delete()
     db.session.commit()
-    if request_wants_json():
-        return jsonify(pdf_dumper.dump(pdf).data)
-    return redirect(url_for('pdfhook.get_pdf', pdf_id=pdf.id))
+    return redirect(url_for('form_api'))
 
 
+class PDFFormAPI(MethodView):
 
-@blueprint.route('/<int:pdf_id>/', methods=['GET'])
-def get_pdf(pdf_id):
-    pdf = models.PDFForm.query.filter_by(id=pdf_id).first()
-    if not pdf:
-        abort(404)
-    serialized_pdf = pdf_dumper.dump(pdf).data
-    if request_wants_json():
-        return jsonify(serialized_pdf)
-    return render_template('pdf_detail.html', pdf=serialized_pdf, json=json)
+    def get(self, pdf_id):
+        '''Return a list of pdf forms or expose a single pdf form.'''
+        if pdf_id is None:
+            pdfs = models.PDFForm.query.order_by(models.PDFForm.latest_post.desc()).all()
+            if request_wants_json():
+                serialized_pdfs = pdf_list_dumper.dump(pdfs, many=True).data
+                return jsonify(dict(pdf_forms=serialized_pdfs))
+            return render_template('index.html', pdfs=pdfs)
+        else:
+            pdf = models.PDFForm.query.filter_by(id=pdf_id).first()
+            if not pdf:
+                abort(404)
+            serialized_pdf = pdf_dumper.dump(pdf).data
+            if request_wants_json():
+                return jsonify(pdf_dumper.dump(pdf).data)
+            return render_template('pdf_detail.html', pdf=serialized_pdf, json=json)
 
+    def post(self, pdf_id):
+        '''Create a new pdf form from file.'''
+        if pdf_id is None:
+            if not request.files:
+                abort(Response("No files found"))  # TODO if json, 302 bad request
+            file_storage = request.files['file']
+            filename = os.path.basename(file_storage.filename)
+            raw_pdf_data = file_storage.read()
+            field_map = pdfparser.get_field_data(raw_pdf_data)['fields']
+            pdf, errors = pdf_loader.load(dict(
+                original_pdf_title=filename,
+                field_map=field_map
+                ))
+            pdf.original_pdf = raw_pdf_data
+            db.session.add(pdf)
+            db.session.commit()
+            if request_wants_json():
+                return jsonify(pdf_dumper.dump(pdf).data)
+            return redirect(url_for('form_api', pdf_id=pdf.id))
+        else:
+            pdf = models.PDFForm.query.filter_by(id=pdf_id).first()
+            if not pdf:
+                abort(404)
+            data = request.get_json()
+            if not data and request.form:
+                data = {}
+                field_map = json.loads(pdf.field_map)
+                for fieldname in request.form:
+                    idx = int(fieldname.replace('field', '')) - 1
+                    input_value = request.form[fieldname]
+                    field = field_map[idx]
+                    data[field['name']] = input_value
+            if isinstance(data, list):
+                output = pdfparser.fill_pdf_many(pdf.original_pdf, data)
+            else:
+                output = pdfparser.fill_pdf(pdf.original_pdf, data)
+            pdf.post_count += 1
+            pdf.latest_post = datetime.datetime.now()
+            db.session.add(pdf)
+            db.session.commit()
+            filename = pdf.filename_for_submission()
+            # I am unsure if this is the best way to return
+            # the filled pdf. `output` is a `bytes` object
+            return send_file(
+                io.BytesIO(output),
+                attachment_filename=filename,
+                mimetype='application/pdf')
 
-@blueprint.route('/<int:pdf_id>/', methods=['POST'])
-def fill_pdf(pdf_id):
-    pdf = models.PDFForm.query.filter_by(id=pdf_id).first()
-    if not pdf:
-        abort(404)
-    data = request.get_json()
-    if not data and request.form:
-        data = {}
-        field_map = json.loads(pdf.field_map)
-        for fieldname in request.form:
-            idx = int(fieldname.replace('field', '')) - 1
-            input_value = request.form[fieldname]
-            field = field_map[idx]
-            data[field['name']] = input_value
-    if isinstance(data, list):
-        output = pdfparser.fill_pdf_many(pdf.original_pdf, data)
-    else:
-        output = pdfparser.fill_pdf(pdf.original_pdf, data)
-    pdf.post_count += 1
-    pdf.latest_post = datetime.datetime.now()
-    db.session.add(pdf)
-    db.session.commit()
-    filename = pdf.filename_for_submission()
-    # I am unsure if this is the best way to return
-    # the filled pdf. `output` is a `bytes` object
-    return send_file(
-        io.BytesIO(output),
-        attachment_filename=filename,
-        mimetype='application/pdf')
+    def delete(self, pdf_id):
+        '''Delete a single pdf form.'''
+        pdf = models.PDFForm.query.filter_by(id=pdf_id).delete()
+        db.session.commit()
+        return redirect(url_for('form_api'))
 
+    def put(self, pdf_id):
+        # update a single pdf form
+        # pdf = models.PDFForm.query.filter_by(id=pdf_id).first()
+        pass
