@@ -49,5 +49,5 @@ class TestViews(BaseTestCase):
 
     def test_delete_pdf_returns_clean_index(self):
         url = url_for('pdfhook.delete_pdf', pdf_id=self.pdfs[0].id)
-        response = self.client.get(url)
+        response = self.client.post(url)
         self.assertNotIn(url, response.data.decode('utf-8'))
