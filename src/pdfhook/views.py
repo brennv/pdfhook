@@ -13,12 +13,10 @@ from src.pdfhook import (
 from src.pdfparser import PDFParser
 from src.settings import PROJECT_ROOT
 
-
 pdf_dumper = serializers.PDFFormDumper()
 pdf_list_dumper = serializers.PDFFormIndexDumper()
 pdf_loader = serializers.PDFFormLoader()
 pdfparser = PDFParser(clean_up=False)
-
 
 def request_wants_json():
     best = request.accept_mimetypes \
@@ -26,7 +24,6 @@ def request_wants_json():
     return best == 'application/json' and \
         request.accept_mimetypes[best] > \
         request.accept_mimetypes['text/html']
-
 
 @blueprint.before_app_first_request
 def make_sure_there_is_a_working_database(*args, **kwargs):
@@ -40,12 +37,10 @@ def make_sure_there_is_a_working_database(*args, **kwargs):
             "database tables {} not found. Creating tables".format(required_tables))
         db.create_all()
 
-
 @blueprint.after_request
 def cleanup_files(response):
     pdfparser.clean_up_tmp_files()
     return response
-
 
 @blueprint.route('/forms/<int:pdf_id>/delete', methods=['POST'])
 def html_delete(pdf_id):
