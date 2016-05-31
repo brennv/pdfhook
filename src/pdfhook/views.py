@@ -120,6 +120,7 @@ def fill_pdf(pdf_id):
         mimetype='application/pdf')
 
 
+@blueprint.route('/<int:pdf_id>', methods=['DELETE'])
 @blueprint.route('/<int:pdf_id>/delete/', methods=['POST'])
 def delete_pdf(pdf_id):
     pdf = models.PDFForm.query.filter_by(id=pdf_id).delete()
