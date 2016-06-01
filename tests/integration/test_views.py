@@ -1,4 +1,5 @@
 
+import os
 import json
 from tests.test_base import BaseTestCase
 from tests.mock.factories import PDFFormFactory
@@ -47,5 +48,12 @@ class TestViews(BaseTestCase):
         data = json.loads(response.data.decode('utf-8'))
         self.assertDictEqual(expected, data)
 
-
-
+    def test_fallback_db_creation_on_page_load(self):
+        is_default_db = os.path.isfile('./data/default.db')
+        expected = False
+        if is_default_db:
+            os.remove('./data/default.db')
+            response = self.client.get(url_for('pdfhook.index'))
+            if os.path.isfile('./data/default.db'):
+                expected = True
+        self.assertEqual(expected, is_default_db)
