@@ -90,10 +90,11 @@ Visit [http://localhost:5000/](http://localhost:5000/) to see the demo page. Use
 
 ### Deployment
 
-[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)  [![Deploy to Azure](http://azuredeploy.net/deploybutton.png)](https://azuredeploy.net/)
+[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
 
 To deploy on Heroku use the button or:
 
+    git clone https://www.github/codeforamerica/pdfhook.git
     cd pdfhook
     heroku login
     heroku apps:create
@@ -101,6 +102,7 @@ To deploy on Heroku use the button or:
 
 To deploy on Cloud Foundry:
 
+    git clone https://www.github/codeforamerica/pdfhook.git
     cd pdfhook
     cp manifest.yml.example manifest.yml
     # make any changes to `manifest.yml`, if desired
@@ -108,5 +110,6 @@ To deploy on Cloud Foundry:
 
 To deploy on Windows or Mac via virtual machine, install [Vagrant](https://www.vagrantup.com) and [VirtualBox](https://www.virtualbox.org) then:
 
+    git clone https://www.github/codeforamerica/pdfhook.git
     cd pdfhook
     vagrant up
