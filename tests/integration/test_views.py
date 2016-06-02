@@ -1,5 +1,6 @@
 
 import json
+from urllib.parse import urlparse
 from tests.test_base import BaseTestCase
 from tests.mock.factories import PDFFormFactory
 from flask import url_for
@@ -49,5 +50,7 @@ class TestViews(BaseTestCase):
 
     def test_delete_pdf_returns_clean_index(self):
         url = url_for('pdfhook.delete_pdf', pdf_id=self.pdfs[0].id)
-        response = self.client.post(url)
-        self.assertNotIn(url, response.data.decode('utf-8'))
+        pdf_name = self.pdfs[0].original_pdf_title
+        response = self.client.post(url, follow_redirects=True)
+        response_html = response.data.decode('utf-8')
+        self.assertNotIn(pdf_name, response_html)
